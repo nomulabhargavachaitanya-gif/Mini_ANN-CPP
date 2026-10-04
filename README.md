@@ -5,176 +5,60 @@ MiniANN is a custom, from-scratch artificial neural network library built entire
 
 The core design philosophy separates the mathematical blueprints (Interfaces) from the physical network topology (Neurons and Layers), while a central engine (NeuralNetwork) orchestrates memory management, forward propagation, and backpropagation via the chain rule of calculus.
 
-#### Simple UML diagram explaining the flow of the project
-
-```mermaid
-classDiagram
-    %% Core Classes 
-    class MathVector
-    class DataLoader
-    class Neuron
-    class Layer
-    class NeuralNetwork
-    
-    %% Interfaces (Polymorphism)
-    class IActivation { <<interface>> }
-    class ILossFunction { <<interface>> }
-    class IOptimizer { <<interface>> }
-    
-    %% Concrete Implementations
-    class Sigmoid
-    class ReLU
-    class Tanh
-    class MSE
-    class BinaryCrossEntropy
-    class SGD
-    class Momentum
-
-    %% Inheritance Relationships
-    IActivation <|-- Sigmoid
-    IActivation <|-- ReLU
-    IActivation <|-- Tanh
-    
-    ILossFunction <|-- MSE
-    ILossFunction <|-- BinaryCrossEntropy
-    
-    IOptimizer <|-- SGD
-    IOptimizer <|-- Momentum
-
-    %% Structural Relationships
-    Neuron *-- MathVector : Owns Weights
-    Neuron o-- IActivation : Uses
-    Layer *-- Neuron : Contains
-    NeuralNetwork *-- Layer : Contains
-    NeuralNetwork o-- IOptimizer : Uses
-    NeuralNetwork o-- ILossFunction : Uses
-    NeuralNetwork ..> DataLoader : Reads Data From
-```
-
-#### Detailed UML Diagram 
+#### Project Architecture
 ```mermaid
 classDiagram
     %% Core Math Data Structure
     class MathVector {
         +vector~double~ data
-        +MathVector(vector~double~ d)
-        +MathVector(int size, double initial_value)
         +operator*(MathVector other) double
-        +operator*(double scalar) MathVector
-        +operator-(MathVector other) MathVector
         +operator+(MathVector other) MathVector
     }
 
     %% Interfaces (Polymorphism)
-    class IActivation {
-        <<interface>>
-        +activate(double x)* double
-        +derivative(double x)* double
-    }
+    class IActivation { <<interface>> }
+    class ILossFunction { <<interface>> }
+    class IOptimizer { <<interface>> }
 
-    class ILossFunction {
-        <<interface>>
-        +calculate(double prediction, double target)* double
-        +derivative(double prediction, double target)* double
-    }
-
-    class IOptimizer {
-        <<interface>>
-        #double learningRate
-        +IOptimizer(double lr)
-        +calculateUpdate(MathVector gradients, MathVector neuron_velocity)* MathVector
-        +calculateUpdate(double gradient, double neuron_bias_velocity)* double
-    }
-
-    %% Interface Implementations (Inheritance)
-    class Sigmoid {
-        +activate(double x) double
-        +derivative(double x) double
-    }
-    class ReLU {
-        +activate(double x) double
-        +derivative(double x) double
-    }
-    class Tanh {
-        +activate(double x) double
-        +derivative(double x) double
-    }
+    %% Concrete Implementations
     IActivation <|-- Sigmoid
     IActivation <|-- ReLU
     IActivation <|-- Tanh
-
-    class MSE {
-        +calculate(double prediction, double target) double
-        +derivative(double prediction, double target) double
-    }
-    class BinaryCrossEntropy {
-        +calculate(double prediction, double target) double
-        +derivative(double prediction, double target) double
-    }
     ILossFunction <|-- MSE
     ILossFunction <|-- BinaryCrossEntropy
-
-    class SGD {
-        +SGD(double lr)
-        +calculateUpdate(MathVector gradients, MathVector neuron_velocity) MathVector
-        +calculateUpdate(double gradient, double neuron_bias_velocity) double
-    }
-    class Momentum {
-        -double beta
-        +Momentum(double lr, double b)
-        +calculateUpdate(MathVector gradients, MathVector neuron_velocity) MathVector
-        +calculateUpdate(double gradient, double neuron_bias_velocity) double
-    }
     IOptimizer <|-- SGD
     IOptimizer <|-- Momentum
 
-    %% Network Topology (Composition & Aggregation)
+    %% Network Topology
     class Neuron {
         -MathVector weights
         -double bias
-        -MathVector velocity
-        -double bias_velocity
-        -IActivation* activationFunction
-        -MathVector last_inputs
-        -double last_z
-        -double last_a
-        -double delta
-        +Neuron(int numInputs, IActivation* activation)
         +forward(MathVector inputs) double
     }
 
     class Layer {
         -vector~Neuron~ neurons
-        +Layer(int numNeurons, int numInputsPerNeuron, IActivation* activation)
         +forward(MathVector inputs) MathVector
     }
 
     class NeuralNetwork {
         -vector~Layer~ layers
-        -IOptimizer* optimizer
-        -ILossFunction* lossFunction
-        +NeuralNetwork(IOptimizer* opt, ILossFunction* loss)
-        +~NeuralNetwork()
-        +addLayer(int numNeurons, int numInputs, IActivation* activation)
-        +predict(MathVector inputs) MathVector
-        +train(vector~MathVector~ X, vector~MathVector~ y, int epochs)
-        +train(vector~vector~double~~ X, vector~vector~double~~ y, int epochs)
-        +saveModel(string filename)
-        +loadModel(string filename)
-    }
-    
-    class DataLoader {
-        +loadCSV(string filename, vector~vector~double~~ X, vector~vector~double~~ y, int numTargets)$ bool
+        +train(X, y, epochs)
+        +predict(inputs)
     }
 
-    %% Relationship Definitions
-    Neuron *-- MathVector : Composition (Owns Weights/Velocity)
-    Neuron o-- IActivation : Aggregation (Pointer to Math)
-    Layer *-- Neuron : Composition (Owns Neurons)
-    NeuralNetwork *-- Layer : Composition (Owns Layers)
-    NeuralNetwork o-- IOptimizer : Aggregation (Pointer to Math)
-    NeuralNetwork o-- ILossFunction : Aggregation (Pointer to Math)
-    NeuralNetwork ..> DataLoader : Dependency (Takes parsed data)
+    class DataLoader {
+        +loadCSV(...) bool
+    }
+
+    %% Relationships
+    Neuron *-- MathVector : Owns
+    Neuron o-- IActivation : Uses
+    Layer *-- Neuron : Contains
+    NeuralNetwork *-- Layer : Contains
+    NeuralNetwork o-- IOptimizer : Uses
+    NeuralNetwork o-- ILossFunction : Uses
+    NeuralNetwork ..> DataLoader : Reads From
 ```
 
 ## 2. Directory Structure
