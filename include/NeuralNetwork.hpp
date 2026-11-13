@@ -2,7 +2,7 @@
 #include "Layer.hpp"
 #include "activations.hpp"
 #include "lossfunction.hpp"
-#include "optimiser.hpp"
+#include "optimizer.hpp"
 #include <vector>
 #include <string>
 
