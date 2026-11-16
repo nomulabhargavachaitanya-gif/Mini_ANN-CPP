@@ -15,7 +15,7 @@ int main() {
     const int targetColumns = 1;
 
     std::cout << "Loading dataset...\n";
-    if (!DataLoader::loadCSV(dataset, X_train, y_train, targetColumns)) {
+    if (!DataLoader::loadCSV(dataset, X_train, y_train, targetColumns) || X_train.empty()) {
         return 1;
     }
 
@@ -26,8 +26,10 @@ int main() {
     std::cout << "Features per input: " << numFeatures
               << " | Targets per output: " << numTargets << "\n";
 
+    NeuralNetwork::setSeed(42);
+
     NeuralNetwork myNet(
-        std::make_unique<Momentum>(0.01, 0.9),
+        std::make_unique<Momentum>(0.05, 0.9),
         std::make_unique<BinaryCrossEntropy>()
     );
 
@@ -36,14 +38,23 @@ int main() {
     myNet.addLayer(numTargets, 4, std::make_shared<Sigmoid>());
 
     std::cout << "\nTraining Started...\n";
-    myNet.train(X_train, y_train, 1001);
+    myNet.train(X_train, y_train, 501, 8, 100, true);
 
-    std::cout << "\n--- Quick Verification ---\n";
-    const MathVector testInput(X_train[0]);
-    const MathVector pred = myNet.predict(testInput);
+    std::size_t correct = 0;
+    for (std::size_t i = 0; i < X_train.size(); ++i) {
+        const MathVector pred = myNet.predict(MathVector(X_train[i]));
+        const int predictedLabel = (pred[0] >= 0.5) ? 1 : 0;
+        const int actualLabel = (y_train[i][0] >= 0.5) ? 1 : 0;
+        if (predictedLabel == actualLabel) {
+            ++correct;
+        }
+    }
 
-    std::cout << "Expected Output: " << y_train[0][0] << "\n";
-    std::cout << "Network Output:  " << std::fixed << std::setprecision(4) << pred[0] << "\n";
+    std::cout << "\n--- Evaluation Summary ---\n";
+    std::cout << "Training Accuracy: " << correct << "/" << X_train.size() << " ("
+              << std::fixed << std::setprecision(1)
+              << (100.0 * static_cast<double>(correct) / static_cast<double>(X_train.size()))
+              << "%)\n";
 
     myNet.saveModel("data/trained_classification_model.csv");
 

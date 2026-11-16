@@ -7,7 +7,7 @@ protected:
     double learningRate;
 
 public:
-    explicit IOptimizer(double lr) : learningRate(lr) {}
+    explicit IOptimizer(double lr);
     virtual ~IOptimizer() = default;
 
     virtual MathVector calculateUpdate(const MathVector& gradients, MathVector& neuronVelocity) = 0;
@@ -16,15 +16,10 @@ public:
 
 class SGD : public IOptimizer {
 public:
-    explicit SGD(double lr) : IOptimizer(lr) {}
+    explicit SGD(double lr);
 
-    MathVector calculateUpdate(const MathVector& gradients, MathVector& /*neuronVelocity*/) override {
-        return gradients * learningRate;
-    }
-
-    double calculateUpdate(double gradient, double& /*neuronBiasVelocity*/) override {
-        return gradient * learningRate;
-    }
+    MathVector calculateUpdate(const MathVector& gradients, MathVector& neuronVelocity) override;
+    double calculateUpdate(double gradient, double& neuronBiasVelocity) override;
 };
 
 class Momentum : public IOptimizer {
@@ -32,15 +27,8 @@ private:
     double beta;
 
 public:
-    explicit Momentum(double lr, double b = 0.9) : IOptimizer(lr), beta(b) {}
+    explicit Momentum(double lr, double b = 0.9);
 
-    MathVector calculateUpdate(const MathVector& gradients, MathVector& neuronVelocity) override {
-        neuronVelocity = (neuronVelocity * beta) + (gradients * learningRate);
-        return neuronVelocity;
-    }
-
-    double calculateUpdate(double gradient, double& neuronBiasVelocity) override {
-        neuronBiasVelocity = (neuronBiasVelocity * beta) + (gradient * learningRate);
-        return neuronBiasVelocity;
-    }
+    MathVector calculateUpdate(const MathVector& gradients, MathVector& neuronVelocity) override;
+    double calculateUpdate(double gradient, double& neuronBiasVelocity) override;
 };

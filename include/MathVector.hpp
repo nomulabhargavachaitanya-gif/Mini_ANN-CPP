@@ -1,63 +1,36 @@
 #pragma once
 
 #include <cstddef>
-#include <stdexcept>
+#include <initializer_list>
 #include <vector>
 
 struct MathVector {
     std::vector<double> data;
 
     MathVector() = default;
-    explicit MathVector(const std::vector<double>& d) : data(d) {}
-    explicit MathVector(std::size_t size, double initial_value = 0.0) : data(size, initial_value) {}
+    explicit MathVector(const std::vector<double>& d);
+    MathVector(std::initializer_list<double> list);
+    explicit MathVector(std::size_t size, double initial_value = 0.0);
 
-    std::size_t size() const noexcept { return data.size(); }
+    std::size_t size() const noexcept;
+    bool empty() const noexcept;
 
-    double& operator[](std::size_t index) { return data[index]; }
-    const double& operator[](std::size_t index) const { return data[index]; }
+    double& operator[](std::size_t index);
+    const double& operator[](std::size_t index) const;
+
+    double& at(std::size_t index);
+    const double& at(std::size_t index) const;
 
     // Dot Product
-    double operator*(const MathVector& other) const {
-        if (data.size() != other.data.size()) {
-            throw std::invalid_argument("MathVector size mismatch in dot product.");
-        }
-        double result = 0.0;
-        for (std::size_t i = 0; i < data.size(); ++i) {
-            result += data[i] * other.data[i];
-        }
-        return result;
-    }
+    double operator*(const MathVector& other) const;
 
-    // Scalar Multiplication
-    MathVector operator*(double scalar) const {
-        std::vector<double> result(data.size());
-        for (std::size_t i = 0; i < data.size(); ++i) {
-            result[i] = data[i] * scalar;
-        }
-        return MathVector(result);
-    }
+    // Scalar Multiplication & Division
+    MathVector operator*(double scalar) const;
+    MathVector operator/(double scalar) const;
 
-    // Element-wise Subtraction
-    MathVector operator-(const MathVector& other) const {
-        if (data.size() != other.data.size()) {
-            throw std::invalid_argument("MathVector size mismatch in subtraction.");
-        }
-        std::vector<double> result(data.size());
-        for (std::size_t i = 0; i < data.size(); ++i) {
-            result[i] = data[i] - other.data[i];
-        }
-        return MathVector(result);
-    }
-
-    // Element-wise Addition
-    MathVector operator+(const MathVector& other) const {
-        if (data.size() != other.data.size()) {
-            throw std::invalid_argument("MathVector size mismatch in addition.");
-        }
-        std::vector<double> result(data.size());
-        for (std::size_t i = 0; i < data.size(); ++i) {
-            result[i] = data[i] + other.data[i];
-        }
-        return MathVector(result);
-    }
+    // Element-wise Operations
+    MathVector operator-(const MathVector& other) const;
+    MathVector operator+(const MathVector& other) const;
+    MathVector& operator+=(const MathVector& other);
+    MathVector& operator-=(const MathVector& other);
 };

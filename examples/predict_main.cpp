@@ -1,21 +1,13 @@
 #include <iomanip>
 #include <iostream>
-#include <memory>
 #include <vector>
 
 #include "NeuralNetwork.hpp"
 
 int main() {
-    NeuralNetwork myNet(
-        std::make_unique<Momentum>(0.01, 0.9),
-        std::make_unique<BinaryCrossEntropy>()
-    );
+    NeuralNetwork myNet;
 
-    myNet.addLayer(8, 4, std::make_shared<Tanh>());
-    myNet.addLayer(4, 8, std::make_shared<Tanh>());
-    myNet.addLayer(1, 4, std::make_shared<Sigmoid>());
-
-    std::cout << "Loading trained weights...\n";
+    std::cout << "Loading trained model architecture and weights...\n";
     myNet.loadModel("data/trained_classification_model.csv");
 
     const std::vector<double> rawInput = {0.8, 0.7, 0.6, 0.5};

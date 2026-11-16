@@ -20,6 +20,8 @@ int main() {
         {0.0}
     };
 
+    NeuralNetwork::setSeed(42);
+
     NeuralNetwork myNet(
         std::make_unique<Momentum>(0.1, 0.9),
         std::make_unique<MSE>()
@@ -28,7 +30,7 @@ int main() {
     myNet.addLayer(1, 4, std::make_shared<Sigmoid>());
 
     std::cout << "--- Training XOR ---\n";
-    myNet.train(X_train, y_train, 2000);
+    myNet.train(X_train, y_train, 2000, 1, 500, true);
 
     std::cout << "\n--- Final Predictions ---\n";
     std::cout << std::fixed << std::setprecision(4);

@@ -13,10 +13,14 @@ else()
 endif()
 
 add_library(miniann_core
-    src/NeuralNetwork.cpp
-    src/Layer.cpp
-    src/Neuron.cpp
+    src/Activations.cpp
     src/DataLoader.cpp
+    src/Layer.cpp
+    src/LossFunction.cpp
+    src/MathVector.cpp
+    src/NeuralNetwork.cpp
+    src/Neuron.cpp
+    src/Optimizer.cpp
 )
 target_include_directories(miniann_core PUBLIC include)
 
@@ -28,3 +32,8 @@ target_link_libraries(predict_miniann PRIVATE miniann_core)
 
 add_executable(xor_miniann examples/xor_main.cpp)
 target_link_libraries(xor_miniann PRIVATE miniann_core)
+
+enable_testing()
+add_executable(test_miniann tests/test_miniann.cpp)
+target_link_libraries(test_miniann PRIVATE miniann_core)
+add_test(NAME MiniANNUnitTests COMMAND test_miniann)
