@@ -1,26 +1,26 @@
 #pragma once
-#include "MathVector.hpp"
-#include "activations.hpp"
-#include <vector>
 
-using namespace std;
+#include <memory>
+#include "Activations.hpp"
+#include "MathVector.hpp"
 
 class Neuron {
-    friend class NeuralNetwork; 
+    friend class NeuralNetwork;
     friend class Layer;
+
 private:
     MathVector weights;
     double bias;
-    MathVector velocity; 
+    MathVector velocity;
     double bias_velocity;
-    IActivation* activationFunction;
-    
+    std::shared_ptr<IActivation> activationFunction;
+
     MathVector last_inputs;
     double last_z;
     double last_a;
     double delta;
 
 public:
-    Neuron(int numInputs, IActivation* activation);
+    Neuron(int numInputs, std::shared_ptr<IActivation> activation);
     double forward(const MathVector& inputs);
 };

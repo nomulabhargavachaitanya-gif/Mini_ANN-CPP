@@ -1,30 +1,29 @@
 #include "Neuron.hpp"
+
 #include <random>
+#include <utility>
 
-using namespace std;
+Neuron::Neuron(int numInputs, std::shared_ptr<IActivation> activation)
+    : weights(static_cast<std::size_t>(numInputs), 0.0),
+      bias(0.0),
+      velocity(static_cast<std::size_t>(numInputs), 0.0),
+      bias_velocity(0.0),
+      activationFunction(std::move(activation)),
+      last_inputs(static_cast<std::size_t>(numInputs), 0.0),
+      last_z(0.0),
+      last_a(0.0),
+      delta(0.0) {
+    static thread_local std::mt19937 gen(std::random_device{}());
+    std::uniform_real_distribution<double> dis(-1.0, 1.0);
 
-Neuron::Neuron(int numInputs, IActivation* activation) 
-    : weights(numInputs, 0.0), velocity(numInputs, 0.0), last_inputs(numInputs, 0.0) {
-    
-    this->activationFunction = activation;
-    this->bias = 0.0;
-    this->bias_velocity = 0.0;
-    this->delta = 0.0;
-    this->last_z = 0.0;
-    this->last_a = 0.0;
-
-    random_device rd;
-    mt19937 gen(rd());
-    uniform_real_distribution<> dis(-1.0, 1.0);
-    
     for (int i = 0; i < numInputs; ++i) {
-        weights.data[i] = dis(gen);
+        weights.data[static_cast<std::size_t>(i)] = dis(gen);
     }
 }
 
 double Neuron::forward(const MathVector& inputs) {
-    this->last_inputs = inputs;
-    this->last_z = (this->weights * inputs) + this->bias;
-    this->last_a = this->activationFunction->activate(this->last_z);
-    return this->last_a;
+    last_inputs = inputs;
+    last_z = (weights * inputs) + bias;
+    last_a = activationFunction->activate(last_z);
+    return last_a;
 }

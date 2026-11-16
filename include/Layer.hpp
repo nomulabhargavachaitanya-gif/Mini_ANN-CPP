@@ -1,15 +1,17 @@
 #pragma once
-#include "Neuron.hpp"
-#include "activations.hpp"
-#include <vector>
 
-using namespace std;
+#include <memory>
+#include <vector>
+#include "Activations.hpp"
+#include "Neuron.hpp"
 
 class Layer {
     friend class NeuralNetwork;
+
 private:
-    vector<Neuron> neurons;
+    std::vector<Neuron> neurons;
+
 public:
-    Layer(int numNeurons, int numInputsPerNeuron, IActivation* activation);
+    Layer(int numNeurons, int numInputsPerNeuron, std::shared_ptr<IActivation> activation);
     MathVector forward(const MathVector& inputs);
 };

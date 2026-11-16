@@ -1,29 +1,37 @@
 #pragma once
-#include "Layer.hpp"
-#include "activations.hpp"
-#include "lossfunction.hpp"
-#include "optimizer.hpp"
-#include <vector>
-#include <string>
 
-using namespace std;
+#include <memory>
+#include <string>
+#include <vector>
+#include "Activations.hpp"
+#include "Layer.hpp"
+#include "LossFunction.hpp"
+#include "Optimizer.hpp"
 
 class NeuralNetwork {
 private:
-    vector<Layer> layers;
-    IOptimizer* optimizer;
-    ILossFunction* lossFunction;
+    std::vector<Layer> layers;
+    std::unique_ptr<IOptimizer> optimizer;
+    std::unique_ptr<ILossFunction> lossFunction;
 
 public:
+    NeuralNetwork(std::unique_ptr<IOptimizer> opt, std::unique_ptr<ILossFunction> loss);
     NeuralNetwork(IOptimizer* opt, ILossFunction* loss);
-    ~NeuralNetwork();
+    ~NeuralNetwork() = default;
 
+    NeuralNetwork(const NeuralNetwork&) = delete;
+    NeuralNetwork& operator=(const NeuralNetwork&) = delete;
+    NeuralNetwork(NeuralNetwork&&) noexcept = default;
+    NeuralNetwork& operator=(NeuralNetwork&&) noexcept = default;
+
+    void addLayer(int numNeurons, int numInputsPerNeuron, std::shared_ptr<IActivation> activation);
     void addLayer(int numNeurons, int numInputsPerNeuron, IActivation* activation);
+
     MathVector predict(const MathVector& inputs);
-    
-    void train(const vector<MathVector>& X, const vector<MathVector>& y, int epochs);
-    void train(const vector<vector<double>>& X, const vector<vector<double>>& y, int epochs);
-    
-    void saveModel(const string& filename);
-    void loadModel(const string& filename);
+
+    void train(const std::vector<MathVector>& X, const std::vector<MathVector>& y, int epochs);
+    void train(const std::vector<std::vector<double>>& X, const std::vector<std::vector<double>>& y, int epochs);
+
+    void saveModel(const std::string& filename) const;
+    void loadModel(const std::string& filename);
 };

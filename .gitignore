@@ -1,2 +1,18 @@
+# Build artifacts & directories
 bin/
+build/
+*.o
+*.obj
 *.exe
+*.out
+*.app
+
+# Generated model artifacts
+data/trained_classification_model.csv
+
+# OS & Editor files
+.DS_Store
+.vscode/
+.idea/
+*.swp
+*~

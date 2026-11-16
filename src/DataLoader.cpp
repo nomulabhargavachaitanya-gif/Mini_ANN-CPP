@@ -1,43 +1,41 @@
 #include "DataLoader.hpp"
-#include <iostream>
+
 #include <fstream>
+#include <iostream>
 #include <sstream>
 
-using namespace std;
-
-bool DataLoader::loadCSV(const string& filename, 
-                         vector<vector<double>>& X, 
-                         vector<vector<double>>& y, 
+bool DataLoader::loadCSV(const std::string& filename,
+                         std::vector<std::vector<double>>& X,
+                         std::vector<std::vector<double>>& y,
                          int numTargets) {
-    ifstream file(filename);
+    std::ifstream file(filename);
     if (!file.is_open()) {
-        cerr << "Error: Could not open file " << filename << endl;
+        std::cerr << "Error: Could not open file " << filename << "\n";
         return false;
     }
 
-    string line;
-
-    while (getline(file, line)) {
-        if (line.empty()) continue;
-
-        stringstream ss(line);
-        string cell;
-        vector<double> row;
-
-        while (getline(ss, cell, ',')) {
-            row.push_back(stod(cell));
+    std::string line;
+    while (std::getline(file, line)) {
+        if (line.empty()) {
+            continue;
         }
 
-        
-        if (row.size() > numTargets) {
-            vector<double> feature_row(row.begin(), row.end() - numTargets);
-            vector<double> target_row(row.end() - numTargets, row.end());
-            
-            X.push_back(feature_row);
-            y.push_back(target_row);
+        std::stringstream ss(line);
+        std::string cell;
+        std::vector<double> row;
+
+        while (std::getline(ss, cell, ',')) {
+            row.push_back(std::stod(cell));
+        }
+
+        if (row.size() > static_cast<std::size_t>(numTargets)) {
+            std::vector<double> featureRow(row.begin(), row.end() - numTargets);
+            std::vector<double> targetRow(row.end() - numTargets, row.end());
+
+            X.push_back(featureRow);
+            y.push_back(targetRow);
         }
     }
 
-    file.close();
     return true;
 }

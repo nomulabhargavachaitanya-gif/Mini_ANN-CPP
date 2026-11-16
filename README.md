@@ -1,18 +1,20 @@
 # MiniANN: Object-Oriented Artificial Neural Network in C++
 
-## 1. Project Overview and Architectural Design
-MiniANN is a custom, from-scratch artificial neural network library built entirely in C++ without external machine learning dependencies. The architecture is strictly object-oriented, leveraging advanced C++ principles such as polymorphism, encapsulation, and operator overloading to create a highly modular and extensible framework. 
+## 1. Project Overview & Architecture
+**MiniANN** is a lightweight, from-scratch artificial neural network library built entirely in modern C++17 without external machine learning dependencies. Its object-oriented design leverages polymorphism, RAII smart pointers (`std::unique_ptr`, `std::shared_ptr`), encapsulation, and operator overloading to provide a clean, modular, and extensible framework.
 
-The core design philosophy separates the mathematical blueprints (Interfaces) from the physical network topology (Neurons and Layers), while a central engine (NeuralNetwork) orchestrates memory management, forward propagation, and backpropagation via the chain rule of calculus.
+The design cleanly separates mathematical interfaces from network topology (`Neuron` and `Layer`), while `NeuralNetwork` orchestrates forward propagation, backpropagation, and model persistence.
 
-#### Project Architecture
 ```mermaid
 classDiagram
     %% Core Math Data Structure
     class MathVector {
         +vector~double~ data
+        +size() size_t
         +operator*(MathVector other) double
+        +operator*(double scalar) MathVector
         +operator+(MathVector other) MathVector
+        +operator-(MathVector other) MathVector
     }
 
     %% Interfaces (Polymorphism)
@@ -33,6 +35,7 @@ classDiagram
     class Neuron {
         -MathVector weights
         -double bias
+        -shared_ptr~IActivation~ activationFunction
         +forward(MathVector inputs) double
     }
 
@@ -43,81 +46,119 @@ classDiagram
 
     class NeuralNetwork {
         -vector~Layer~ layers
+        -unique_ptr~IOptimizer~ optimizer
+        -unique_ptr~ILossFunction~ lossFunction
+        +addLayer(numNeurons, numInputs, activation)
         +train(X, y, epochs)
-        +predict(inputs)
+        +predict(inputs) MathVector
+        +saveModel(filename)
+        +loadModel(filename)
     }
 
     class DataLoader {
-        +loadCSV(...) bool
+        +loadCSV(filename, X, y, numTargets)$ bool
     }
 
     %% Relationships
     Neuron *-- MathVector : Owns
-    Neuron o-- IActivation : Uses
+    Neuron o-- IActivation : Shares
     Layer *-- Neuron : Contains
     NeuralNetwork *-- Layer : Contains
-    NeuralNetwork o-- IOptimizer : Uses
-    NeuralNetwork o-- ILossFunction : Uses
+    NeuralNetwork *-- IOptimizer : Owns
+    NeuralNetwork *-- ILossFunction : Owns
     NeuralNetwork ..> DataLoader : Reads From
 ```
 
+---
+
 ## 2. Directory Structure
-The project adheres to professional C++ repository standards, enforcing a strict separation between headers, source logic, raw data, and compiled binaries.
 
-* **`include/` (Blueprints):** Contains all `.hpp` header files defining class structures, interfaces, and inline mathematical templates.
-* **`src/` (Implementation):** Contains all `.cpp` files containing the heavy algorithmic logic and execution entry points.
-* **`data/` (Data Pipeline):** Isolates raw datasets (`data.csv`) and saved model state files (`trained_classification_model.csv`).
-* **`bin/` (Executables):** The dedicated output directory for all compiled `.exe` files, keeping the root workspace clean.
-
-## 3. Core Components and File Architecture
-
-### 3.1 The Math Engine (`MathVector.hpp`)
-Serves as the foundational linear algebra engine for the network. It wraps standard C++ `vector<double>` arrays into a custom `struct` with overloaded mathematical operators (`*`, `+`, `-`). This allows the network to compute dot products ($w \cdot x$) and scale gradients natively without writing explicit loops in the core forward/backward passes.
-
-### 3.2 Polymorphic Interfaces (`activations.hpp / lossfunction.hpp / optimizer.hpp`)
-Defines the strict contracts (Abstract Base Classes) for interchangeable network components using pure virtual functions (`= 0`).
-* **`IActivation`:** Defines `activate()` and `derivative()`. Implemented by `Sigmoid`, `ReLU`, and `Tanh`.
-* **`ILossFunction`:** Defines `calculate()` and `derivative()`. Implemented by `MSE` (Mean Squared Error) and `BinaryCrossEntropy` (optimized for binary classification targets).
-* **`IOptimizer`:** Defines `calculateUpdate()` overloaded for both array weights and scalar biases. Implemented by standard `SGD` and `Momentum` (which tracks an exponentially weighted moving average of past gradients to accelerate convergence).
-
-### 3.3 Network Topology (`Neuron.hpp / .cpp` & `Layer.hpp / .cpp`)
-* **`Neuron`:** Represents a single computational node. It strictly encapsulates its `weights`, `bias`, and `velocity` (for momentum). It maintains a local cache of its last forward pass (`last_inputs`, `last_z`, `last_a`) necessary for calculating derivatives during backpropagation.
-* **`Layer`:** A structural container managing a `std::vector` of Neurons. Its `forward()` method iterates through all internal nodes, passing the identical input signal to each and aggregating their scalar outputs into a new `MathVector` for the next layer.
-* **Security:** Both classes use the C++ `friend` keyword to grant `NeuralNetwork` exclusive VIP access to their private memory banks for weight updates, preventing unauthorized data mutation from the main execution thread.
-
-### 3.4 The Conductor (`NeuralNetwork.hpp / .cpp`)
-The central orchestrator of the project. 
-* **Memory Management:** Its constructor accepts polymorphic pointers (e.g., `new Momentum`, `new BinaryCrossEntropy`), and its custom destructor (`~NeuralNetwork()`) explicitly deletes these heap-allocated objects to prevent memory leaks.
-* **Propagation Algorithms:** Implements `predict()` for sequential forward passes and `train()` for Stochastic Gradient Descent (SGD) backpropagation, calculating error deltas backward from the output layer to the first hidden layer.
-* **State Persistence:** Provides `saveModel()` and `loadModel()` using `<fstream>` to serialize/deserialize network architectures and trained weights to `.csv` text files.
-
-### 3.5 The Data Pipeline (`DataLoader.hpp / .cpp`)
-A static utility class that bridges raw CSV files into the C++ math engine. It utilizes `<sstream>` to parse comma-separated text, cast strings to double-precision floats, and cleanly separate feature matrices ($X$) from target matrices ($y$).
-
-## 4. Execution Entry Points and Compilation Commands
-
-The project supports three distinct execution flows, each managed by its own `main` file located in the `src/` directory.
-
-### Flow A: Core Training Pipeline (`main.cpp`)
-Designed for real-world datasets. It dynamically parses `data.csv`, scales the network architecture to match the feature/target dimensions, trains the model over multiple epochs, and saves the final weights to `trained_classification_model.csv`.
-**Compilation Command:**
-```bash
-g++ src/main.cpp src/NeuralNetwork.cpp src/Layer.cpp src/Neuron.cpp src/DataLoader.cpp -I include -o bin/miniann
+```text
+Mini_ANN-CPP/
+├── include/                  # Public C++17 header files (.hpp)
+│   ├── Activations.hpp       # IActivation interface & Sigmoid, ReLU, Tanh
+│   ├── DataLoader.hpp        # CSV dataset parser utility
+│   ├── Layer.hpp             # Dense neural layer abstraction
+│   ├── LossFunction.hpp      # ILossFunction interface & MSE, BinaryCrossEntropy
+│   ├── MathVector.hpp        # Vector linear algebra operations
+│   ├── NeuralNetwork.hpp     # Core network engine & persistence
+│   ├── Neuron.hpp            # Single artificial neuron unit
+│   └── Optimizer.hpp         # IOptimizer interface & SGD, Momentum
+├── src/                      # Core library implementation (.cpp)
+│   ├── DataLoader.cpp
+│   ├── Layer.cpp
+│   ├── NeuralNetwork.cpp
+│   └── Neuron.cpp
+├── examples/                 # Executable entry points (.cpp)
+│   ├── main.cpp              # Flow A: CSV training & model saving pipeline
+│   ├── predict_main.cpp      # Flow B: Saved model loading & inference pipeline
+│   └── xor_main.cpp          # Flow C: Self-contained XOR verification demo
+├── data/                     # Datasets & serialized models
+│   └── data.csv              # Sample binary classification dataset
+├── Makefile                  # Standard Make build configuration
+├── CMakeLists.txt            # Modern CMake build configuration
+└── README.md
 ```
-**Execution:** `.\bin\miniann.exe` (Windows) or `./bin/miniann` (Mac/Linux)
 
-### Flow B: Inference Pipeline (`predict_main.cpp`)
-Designed for deploying the trained model. It builds the identical "empty shell" architecture from training, injects the saved weights using `loadModel()`, and processes brand new, unseen input vectors to output a final hard-class prediction based on a 0.5 Sigmoid threshold.
-**Compilation Command:**
-```bash
-g++ src/predict_main.cpp src/NeuralNetwork.cpp src/Layer.cpp src/Neuron.cpp src/DataLoader.cpp -I include -o bin/predict_miniann
-```
-**Execution:** `.\bin\predict_miniann.exe` (Windows) or `./bin/predict_miniann` (Mac/Linux)
+---
 
-### Flow C: Rapid Verification Demo (`xor_main.cpp`)
-A hardcoded logic-gate environment that bypasses the `DataLoader`. It serves as a rapid proof-of-concept to verify that the core backpropagation engine and momentum mathematics function flawlessly in an isolated environment without file I/O complexity.
-**Compilation Command:**
+## 3. Core Components
+
+### 3.1 Linear Algebra Engine (`include/MathVector.hpp`)
+Wraps `std::vector<double>` with checked operator overloads (`*` for dot product and scalar multiplication, `+` and `-` for element-wise operations, and `[]` indexing) to express forward and backward passes concisely.
+
+### 3.2 Polymorphic Interfaces (`Activations.hpp`, `LossFunction.hpp`, `Optimizer.hpp`)
+- **`IActivation`**: Defines `activate(double)` and `derivative(double)`. Implemented by `Sigmoid`, `ReLU`, and `Tanh`.
+- **`ILossFunction`**: Defines `calculate(prediction, target)` and `derivative(prediction, target)`. Implemented by `MSE` and numerically clamped `BinaryCrossEntropy`.
+- **`IOptimizer`**: Defines `calculateUpdate()` overloaded for weight vectors and scalar biases. Implemented by `SGD` and `Momentum`.
+
+### 3.3 Network Topology (`Neuron.hpp` & `Layer.hpp`)
+- **`Neuron`**: Encapsulates weights, bias, momentum velocities, and forward-pass caches (`last_inputs`, `last_z`, `last_a`) needed for backpropagation.
+- **`Layer`**: Manages a contiguous `std::vector<Neuron>` and computes layer-wide forward activations.
+
+### 3.4 Network Orchestrator (`NeuralNetwork.hpp`)
+- **RAII Memory Safety**: Manages `IOptimizer` and `ILossFunction` via `std::unique_ptr` and layer activations via `std::shared_ptr` (while remaining backward-compatible with raw pointer construction).
+- **Training & Inference**: Implements `predict()` for forward propagation and `train()` for backpropagation using the chain rule.
+- **Persistence**: Serializes and deserializes trained weights and biases via `saveModel()` and `loadModel()`.
+
+### 3.5 Data Pipeline (`DataLoader.hpp`)
+Parses comma-separated numeric files into feature matrices (`X`) and target matrices (`y`).
+
+---
+
+## 4. Building & Running
+
+### Option A: Using `make` (Recommended)
+Build all executables (`bin/miniann`, `bin/predict_miniann`, `bin/xor_miniann`):
 ```bash
-g++ src/xor_main.cpp src/NeuralNetwork.cpp src/Layer.cpp src/Neuron.cpp src/DataLoader.cpp -I include -o bin/xor_miniann
+make
 ```
-**Execution:** `.\bin\xor_miniann.exe` (Windows) or `./bin/xor_miniann` (Mac/Linux)
+
+Run individual workflows directly:
+```bash
+make run-train      # Train on data/data.csv and save model weights
+make run-predict    # Load saved model weights and run inference
+make run-xor        # Train and evaluate on the classic XOR problem
+```
+
+Clean compiled binaries:
+```bash
+make clean
+```
+
+### Option B: Using CMake
+```bash
+cmake -B build
+cmake --build build
+./build/bin/miniann
+./build/bin/predict_miniann
+./build/bin/xor_miniann
+```
+
+### Option C: Direct `g++` Compilation
+```bash
+mkdir -p bin
+g++ -std=c++17 -Wall -Wextra -O2 examples/main.cpp src/*.cpp -Iinclude -o bin/miniann
+g++ -std=c++17 -Wall -Wextra -O2 examples/predict_main.cpp src/*.cpp -Iinclude -o bin/predict_miniann
+g++ -std=c++17 -Wall -Wextra -O2 examples/xor_main.cpp src/*.cpp -Iinclude -o bin/xor_miniann
+```
